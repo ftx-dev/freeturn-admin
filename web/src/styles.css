@@ -297,7 +297,6 @@ code, .mono { font-family: var(--mono); font-size: 12px; }
 .qr { width: 240px; height: 240px; align-self: center; border-radius: var(--radius-md); background: #fff; image-rendering: pixelated; }
 .link-box { min-height: 90px; font-size: 11px; word-break: break-all; }
 @media (max-width: 760px) { .add-row { flex-direction: column; align-items: stretch; } }
-.select-inline { width: auto; padding: 4px 8px; font-size: 12px; }
 
 /* ── Логотип под тему, доступность серверов ─────────────── */
 .logo { display: inline-flex; }
@@ -324,7 +323,12 @@ code, .mono { font-family: var(--mono); font-size: 12px; }
   background-size: 12px;
   cursor: pointer;
 }
-.select-inline { padding-right: 28px; background-position: right 8px center; }
+/* Компактный список в таблице (роль): та же высота, что у бейджа-кнопки, стрелка с отступом. */
+.select-inline {
+  width: auto; min-width: 150px; height: 30px;
+  padding: 0 30px 0 10px; line-height: 28px; font-size: 12px;
+  background-color: var(--bg-base); background-position: right 10px center; background-size: 11px;
+}
 
 /* ── Звонки сервера ─────────────────────────────────────── */
 .call-row { display: grid; grid-template-columns: 1fr 2fr auto; gap: 8px; align-items: center; }

@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { Icon } from "../components/Icon";
 import { Modal } from "../components/Modal";
 import { api, ApiError, canManageAdmins, ROLE_NAMES, type AdminAccount, type Role } from "../lib/api";
@@ -174,11 +174,6 @@ export function AdminsPage() {
             })}
           </tbody>
         </table>
-      </div>
-      <div className="card card-body">
-        <dl className="kv">
-          {(Object.keys(ROLE_NAMES) as Role[]).map((r) => <Fragment key={r}><dt>{ROLE_NAMES[r]}</dt><dd>{ROLE_HINTS[r]}</dd></Fragment>)}
-        </dl>
       </div>
       {modal === "new" && <Modal title="Новая учётка" onClose={() => setModal("")}><NewAdminForm onDone={() => { setModal(""); refresh(); }} /></Modal>}
       {modal === "password" && <Modal title="Сменить мой пароль" onClose={() => setModal("")}><PasswordForm onDone={() => { setModal(""); setDone("Пароль изменён."); }} /></Modal>}
