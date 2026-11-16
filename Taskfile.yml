@@ -1,0 +1,46 @@
+version: "3"
+
+vars:
+  VERSION:
+    sh: git describe --tags --always --dirty 2>/dev/null || echo dev
+
+tasks:
+  web:
+    desc: Собрать фронт в web/dist
+    dir: web
+    cmds:
+      - npm ci
+      - npm run build
+
+  build:
+    desc: Один бинарник со встроенным фронтом (build/freeturn-admin)
+    deps: [web]
+    cmds:
+      - CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X main.version={{.VERSION}}" -o build/freeturn-admin ./cmd/freeturn-admin
+
+  dev:
+    desc: API на :8080 и Vite на :5173 (прокси /api)
+    cmds:
+      - FTA_DATA_DIR=data FTA_COOKIE_SECURE=false go run ./cmd/freeturn-admin &
+      - cd web && npm run dev
+
+  test:
+    desc: Тесты Go (SQLite) и проверка типов фронта
+    cmds:
+      - go vet ./...
+      - go test ./...
+      - cd web && npm run typecheck
+
+  test-pg:
+    desc: Тесты store и на PostgreSQL (в контейнере)
+    cmds:
+      - docker run -d --rm --name fta-test-pg -e POSTGRES_PASSWORD=test -p 55432:5432 postgres:17-alpine
+      - defer: docker stop fta-test-pg
+      - until docker exec fta-test-pg pg_isready -U postgres >/dev/null 2>&1; do sleep 0.5; done
+      - FTA_TEST_PG_DSN="postgres://postgres:test@127.0.0.1:55432/postgres?sslmode=disable" go test ./internal/store/ -count=1 -v -run TestStore
+
+  release:
+    desc: Бинарники под все платформы (goreleaser)
+    deps: [web]
+    cmds:
+      - goreleaser release --clean --skip=publish --snapshot

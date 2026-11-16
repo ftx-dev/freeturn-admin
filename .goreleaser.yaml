@@ -1,0 +1,17 @@
+version: 2
+project_name: freeturn-admin
+builds:
+  - main: ./cmd/freeturn-admin
+    env: [CGO_ENABLED=0]
+    flags: [-trimpath]
+    ldflags: ["-s -w -X main.version={{.Version}}"]
+    goos: [linux, windows, darwin]
+    goarch: [amd64, arm64]
+archives:
+  - formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    files: [LICENSE, README.md]
+checksum:
+  name_template: SHA256SUMS.txt

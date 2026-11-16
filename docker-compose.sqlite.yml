@@ -1,0 +1,18 @@
+# Одна админка с SQLite в томе: docker compose -f docker-compose.sqlite.yml up -d
+services:
+  admin:
+    build: .
+    image: freeturn-admin
+    restart: unless-stopped
+    environment:
+      FTA_ADMIN_LOGIN: ${FTA_ADMIN_LOGIN:-}
+      FTA_ADMIN_PASSWORD: ${FTA_ADMIN_PASSWORD:-}
+      FTA_COOKIE_SECURE: ${FTA_COOKIE_SECURE:-true}
+      FTA_TRUST_PROXY: ${FTA_TRUST_PROXY:-false}
+    volumes:
+      - admin-data:/data
+    ports:
+      - "127.0.0.1:${FTA_PORT:-8080}:8080"
+
+volumes:
+  admin-data:
