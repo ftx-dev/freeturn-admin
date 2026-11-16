@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { ApiError } from "../lib/api";
 import { useSession } from "../lib/session";
+import { Logo } from "../components/Logo";
 
 // Вход и первичная настройка (создание первого администратора) - одна форма.
 export function AuthPage({ mode }: { mode: "login" | "setup" }) {
@@ -30,7 +31,7 @@ export function AuthPage({ mode }: { mode: "login" | "setup" }) {
     <div className="auth-page">
       <div className="auth-card">
         <div className="auth-head">
-          <img src="/favicon.png" alt="" />
+          <Logo />
           <h1>{isSetup ? "Добро пожаловать" : "FreeTurnX Admin"}</h1>
           <p>{isSetup ? "Создайте учётную запись администратора" : "Войдите, чтобы управлять серверами"}</p>
         </div>

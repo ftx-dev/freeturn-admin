@@ -31,6 +31,7 @@ type API struct {
 
 	loginLimit *limiter
 	jobs       jobs
+	health     healthCache
 }
 
 const (
@@ -54,6 +55,7 @@ func (a *API) Handler() fasthttp.RequestHandler {
 
 	r.GET("/api/servers", a.authed(a.listServers))
 	r.POST("/api/servers", a.authed(a.createServer))
+	r.GET("/api/servers/health", a.authed(a.serversHealth))
 	r.GET("/api/servers/{id}", a.authed(a.getServer))
 	r.PATCH("/api/servers/{id}", a.authed(a.updateServer))
 	r.DELETE("/api/servers/{id}", a.authed(a.deleteServer))
@@ -76,6 +78,12 @@ func (a *API) Handler() fasthttp.RequestHandler {
 	}))
 
 	r.GET("/api/audit", a.authed(a.listAudit))
+
+	r.GET("/api/admins", a.authed(a.listAdmins))
+	r.POST("/api/admins", a.managers(a.createAdmin))
+	r.PATCH("/api/admins/{id}", a.managers(a.updateAdmin))
+	r.DELETE("/api/admins/{id}", a.managers(a.deleteAdmin))
+	r.POST("/api/auth/password", a.authed(a.changeOwnPassword))
 
 	r.NotFound = a.static
 	return securityHeaders(r.Handler)

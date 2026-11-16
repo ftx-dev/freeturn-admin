@@ -62,7 +62,7 @@ func (a *API) setup(ctx *fasthttp.RequestCtx) {
 		a.internal(ctx, err)
 		return
 	}
-	admin, err := a.Store.CreateAdmin(ctx, c.Login, hash, "admin")
+	admin, err := a.Store.CreateAdmin(ctx, c.Login, hash, "root")
 	if err != nil {
 		fail(ctx, 409, "already_setup", "Администратор уже создан")
 		return

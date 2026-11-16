@@ -140,6 +140,8 @@ var migrations = []string{
 		at BIGINT NOT NULL
 	);
 	CREATE INDEX audit_at ON audit(at);`,
+	// Роли: root - владелец (первый администратор), admin - всё, operator - всё, кроме учёток админки.
+	`UPDATE admins SET role = 'root' WHERE id = (SELECT id FROM admins ORDER BY created_at, id LIMIT 1)`,
 }
 
 func (s *Store) migrate(ctx context.Context) error {

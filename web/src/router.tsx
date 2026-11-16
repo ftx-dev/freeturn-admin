@@ -2,6 +2,7 @@ import { createRootRoute, createRoute, createRouter, Outlet } from "@tanstack/re
 import { useEffect } from "react";
 import { Layout } from "./components/Layout";
 import { useSession } from "./lib/session";
+import { AdminsPage } from "./pages/Admins";
 import { AuditPage } from "./pages/Audit";
 import { AuthPage } from "./pages/Auth";
 import { DashboardPage } from "./pages/Dashboard";
@@ -39,9 +40,10 @@ export const serverRoute = createRoute({
     serverTabs.includes(s.tab as ServerTab) ? { tab: s.tab as ServerTab } : {},
 });
 const auditRoute = createRoute({ getParentRoute: () => appRoute, path: "/audit", component: AuditPage });
+const adminsRoute = createRoute({ getParentRoute: () => appRoute, path: "/admins", component: AdminsPage });
 
 export const router = createRouter({
-  routeTree: rootRoute.addChildren([appRoute.addChildren([dashboardRoute, serversRoute, serverRoute, auditRoute])]),
+  routeTree: rootRoute.addChildren([appRoute.addChildren([dashboardRoute, serversRoute, serverRoute, auditRoute, adminsRoute])]),
   defaultPreload: "intent",
 });
 

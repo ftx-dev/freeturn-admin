@@ -117,6 +117,6 @@ func bootstrapAdmin(ctx context.Context, st *store.Store, cfg config.Config) err
 	if err != nil {
 		return err
 	}
-	_, err = st.CreateAdmin(ctx, cfg.AdminLogin, hash, "admin")
+	_, err = st.CreateAdmin(ctx, cfg.AdminLogin, hash, "root")
 	return err
 }

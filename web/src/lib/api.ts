@@ -112,3 +112,8 @@ export async function waitJob(id: string, onUpdate?: (j: Job) => void): Promise<
     await new Promise((r) => setTimeout(r, 1000));
   }
 }
+
+export type Role = "root" | "admin" | "operator";
+export interface AdminAccount { id: string; login: string; role: Role; createdAt: number; lastLoginAt: number }
+export const ROLE_NAMES: Record<Role, string> = { root: "Владелец", admin: "Администратор", operator: "Оператор" };
+export const canManageAdmins = (role?: string) => role === "root" || role === "admin";

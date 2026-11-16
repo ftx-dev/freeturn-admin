@@ -1,11 +1,14 @@
 // Варианты логотипа FreeTurnX. Запуск: swift scripts/make-logo.swift <variant> <shape> <pixels> <out.png>
-//   variant: standard | black | x | a  shape: squircle (иконка) | tile (favicon) | circle (аватар)
+//   variant: standard | black | x | a | a-light  shape: squircle (иконка) | tile (favicon) | circle (аватар)
 // Нужны assets/AppIcon.svg (полная иконка) и assets/AppIconForeground.svg (только знак).
 import AppKit
 
 let args = CommandLine.arguments
 guard args.count == 5, let px = Int(args[3]) else { print("usage: make-logo.swift standard|black|x squircle|circle <pixels> <out.png>"); exit(2) }
-let (variant, shape, out) = (args[1], args[2], args[4])
+var (variant, shape, out) = (args[1], args[2], args[4])
+// a-light - тот же «a» для светлой темы: светлый фон, знак и буква тёмно-синие.
+let light = variant == "a-light"
+if light { variant = "a" }
 let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
 let full = NSImage(contentsOf: root.appendingPathComponent("assets/AppIcon.svg"))!
 let mark = NSImage(contentsOf: root.appendingPathComponent("assets/AppIconForeground.svg"))!
@@ -15,6 +18,19 @@ func poly(_ pts: [(CGFloat, CGFloat)]) -> NSBezierPath {
     let p = NSBezierPath(); p.move(to: NSPoint(x: pts[0].0, y: pts[0].1))
     for q in pts.dropFirst() { p.line(to: NSPoint(x: q.0, y: q.1)) }
     p.close(); return p
+}
+
+/// Знак, перекрашенный умножением: светлые части становятся цветом, тени остаются темнее.
+func tinted(_ img: NSImage, _ color: NSColor) -> NSImage {
+    let out = NSImage(size: img.size)
+    out.lockFocus()
+    let r = NSRect(origin: .zero, size: img.size)
+    img.draw(in: r)
+    color.setFill()
+    r.fill(using: .multiply)
+    img.draw(in: r, from: .zero, operation: .destinationIn, fraction: 1) // вернуть прозрачность знака
+    out.unlockFocus()
+    return out
 }
 
 let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: px, pixelsHigh: px, bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0)!
@@ -45,12 +61,13 @@ if variant == "standard" {
     let zoom: CGFloat = 1.3
     full.draw(in: box.insetBy(dx: -u * (zoom - 1) / 2, dy: -u * (zoom - 1) / 2))
 } else {
-    NSColor.black.setFill()
+    (light ? c(0xF6F8FF) : NSColor.black).setFill()
     outline.fill()
     // Мягкое свечение за знаком: на чистом чёрном так он не теряется.
-    NSGradient(colors: [NSColor(red: 0.42, green: 0.55, blue: 1, alpha: 0.22), NSColor(red: 0.2, green: 0.3, blue: 0.8, alpha: 0)])!
+    NSGradient(colors: [NSColor(red: 0.42, green: 0.55, blue: 1, alpha: light ? 0.16 : 0.22), NSColor(red: 0.2, green: 0.3, blue: 0.8, alpha: 0)])!
         .draw(in: NSBezierPath(ovalIn: box.insetBy(dx: u * 0.1, dy: u * 0.1)), relativeCenterPosition: .zero)
     if variant == "a" {
+        let mark = light ? tinted(mark, c(0x2F4FD0)) : mark
         // Как «x», но справа - строгая буква A: тонкая левая ножка, толстая правая, тонкая перекладина,
         // горизонтальные срезы сверху и снизу. Знак FreeTurnX + A = админка.
         let side = u * 1.16
@@ -60,8 +77,8 @@ if variant == "standard" {
         let ax = (l + r) / 2
         // Толстая правая ножка: от плоской вершины к правому нижнему углу.
         let heavy = poly([(ax - thick * 0.35, t), (ax + thick * 0.65, t), (r, b), (r - thick, b)])
-        NSGradient(colors: [c(0xD9E3FF), c(0xB0C2FF), c(0x94AEFA)])!.draw(in: heavy, angle: -60)
-        c(0xB6C9FF).setFill()
+        NSGradient(colors: light ? [c(0x4A68E8), c(0x3354D6), c(0x243FB4)] : [c(0xD9E3FF), c(0xB0C2FF), c(0x94AEFA)])!.draw(in: heavy, angle: -60)
+        (light ? c(0x4A66E0) : c(0xB6C9FF)).setFill()
         // Тонкая левая ножка - к вершине, под толстую.
         poly([(l, b), (l + thin, b), (ax - thick * 0.35 + thin, t), (ax - thick * 0.35, t)]).fill()
         // Перекладина: от внешнего края левой ножки до толстой, на трети высоты.
@@ -109,7 +126,7 @@ if variant != "standard" {
     cg.setLineWidth(w)
     cg.replacePathWithStrokedPath()
     cg.clip()
-    NSGradient(colors: [c(0xB6C9FF), c(0x94AEFA), c(0x6F8FF0)])!.draw(in: box, angle: -50)
+    NSGradient(colors: light ? [c(0x6F8FF0), c(0x4A68E8), c(0x3354D6)] : [c(0xB6C9FF), c(0x94AEFA), c(0x6F8FF0)])!.draw(in: box, angle: -50)
     NSGraphicsContext.restoreGraphicsState()
 }
 NSGraphicsContext.restoreGraphicsState()

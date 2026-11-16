@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/huhhuh78787878-collab/freeturn-admin/internal/auth"
 )
@@ -79,4 +80,50 @@ func (s *Store) DeleteSession(ctx context.Context, tokenHash string) error {
 func (s *Store) PurgeExpiredSessions(ctx context.Context) error {
 	_, err := s.exec(ctx, `DELETE FROM sessions WHERE expires_at <= ?`, now())
 	return err
+}
+
+func (s *Store) ListAdmins(ctx context.Context) ([]Admin, error) {
+	rows, err := s.query(ctx, `SELECT `+adminCols+` FROM admins ORDER BY created_at, login`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []Admin{}
+	for rows.Next() {
+		a, err := scanAdmin(rows)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, a)
+	}
+	return out, rows.Err()
+}
+
+func (s *Store) SetAdminRole(ctx context.Context, id, role string) error {
+	return affected(s.exec(ctx, `UPDATE admins SET role = ? WHERE id = ?`, role, id))
+}
+
+func (s *Store) SetAdminPassword(ctx context.Context, id, hash string) error {
+	return affected(s.exec(ctx, `UPDATE admins SET password_hash = ? WHERE id = ?`, hash, id))
+}
+
+// DeleteAdmin удаляет учётку; её сессии уходят каскадом.
+func (s *Store) DeleteAdmin(ctx context.Context, id string) error {
+	return affected(s.exec(ctx, `DELETE FROM admins WHERE id = ?`, id))
+}
+
+// DeleteSessionsExcept завершает все сессии администратора, кроме текущей (после смены пароля).
+func (s *Store) DeleteSessionsExcept(ctx context.Context, adminID, keep string) error {
+	_, err := s.exec(ctx, `DELETE FROM sessions WHERE admin_id = ? AND id <> ?`, adminID, keep)
+	return err
+}
+
+func affected(res sql.Result, err error) error {
+	if err != nil {
+		return err
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		return ErrNotFound
+	}
+	return nil
 }

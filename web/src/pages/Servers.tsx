@@ -1,4 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
+import { HealthDot } from "../components/HealthDot";
 import { Icon } from "../components/Icon";
 import { Modal } from "../components/Modal";
 import { ServerForm } from "../components/ServerForm";
@@ -44,7 +45,7 @@ export function ServersPage() {
               {list.map((s, i) => (
                 <tr key={s.id} className="clickable" style={{ animationDelay: `${i * 25}ms` }}
                   onClick={() => navigate({ to: "/servers/$id", params: { id: s.id } })}>
-                  <td style={{ fontWeight: 500 }}>{s.name}</td>
+                  <td style={{ fontWeight: 500 }}><span className="name-with-dot"><HealthDot serverId={s.id} />{s.name}</span></td>
                   <td className="mono">{s.sshUser}@{s.host}{s.sshPort !== 22 && `:${s.sshPort}`}</td>
                   <td className="hide-sm cell-sub">{s.authType === "key" ? "ключ SSH" : "пароль"}</td>
                   <td><HostKeyBadge fingerprint={s.hostFingerprint} /></td>

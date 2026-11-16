@@ -297,3 +297,18 @@ code, .mono { font-family: var(--mono); font-size: 12px; }
 .qr { width: 240px; height: 240px; align-self: center; border-radius: var(--radius-md); background: #fff; image-rendering: pixelated; }
 .link-box { min-height: 90px; font-size: 11px; word-break: break-all; }
 @media (max-width: 760px) { .add-row { flex-direction: column; align-items: stretch; } }
+.select-inline { width: auto; padding: 4px 8px; font-size: 12px; }
+
+/* ── Логотип под тему, доступность серверов ─────────────── */
+.logo { display: inline-flex; }
+.logo-light { display: none; }
+:root[data-theme="light"] .logo-dark { display: none; }
+:root[data-theme="light"] .logo-light { display: inline; }
+.brand .logo img { width: 28px; height: 28px; border-radius: var(--radius-sm); }
+.auth-head .logo img { width: 56px; height: 56px; border-radius: 12px; margin-bottom: 16px; }
+.health-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin: 0 4px; background: var(--fg-muted); transition: background 0.3s; }
+.health-up { background: var(--success); box-shadow: 0 0 0 3px rgba(62, 207, 142, 0.15); }
+.health-down { background: var(--error); box-shadow: 0 0 0 3px rgba(229, 72, 77, 0.15); }
+.health-unknown { background: var(--fg-muted); }
+.name-with-dot { display: inline-flex; align-items: center; gap: 6px; }
+.name-with-dot .health-dot { margin: 0; }

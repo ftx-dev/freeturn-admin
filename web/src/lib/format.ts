@@ -25,4 +25,8 @@ export const ACTIONS: Record<string, string> = {
   "server.uninstall": "Удаление FreeTurn",
   "user.add": "Выдан доступ",
   "user.remove": "Отозван доступ",
+  "admin.create": "Создана учётка админки",
+  "admin.update": "Изменена учётка админки",
+  "admin.delete": "Удалена учётка админки",
+  "admin.password": "Сменён свой пароль",
 };

@@ -11,6 +11,7 @@ const paths = {
   key: "M15.5 7.5a3 3 0 1 1-4.2 4.2L3 20v1h3l1-1v-2h2v-2h2l1.3-1.3a3 3 0 0 0 3.2-7.2z",
   telegram: "M21 4 3 11l6 2 2 6 3-4 5 4z",
   chevron: "m9 18 6-6-6-6",
+  users: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8",
 } as const;
 
 export type IconName = keyof typeof paths;

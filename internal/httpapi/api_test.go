@@ -47,6 +47,12 @@ func newAPI(t *testing.T) (*client, *store.Store) {
 	return &client{t: t, http: hc}, st
 }
 
+// newClientFor - ещё один браузер (свои cookie) к тому же серверу.
+func newClientFor(t *testing.T, c *client) (*client, error) {
+	jar, _ := cookiejar.New(nil)
+	return &client{t: t, http: &http.Client{Jar: jar, Transport: c.http.Transport}}, nil
+}
+
 func (c *client) do(method, path string, body any, out any) int {
 	c.t.Helper()
 	var r io.Reader
@@ -177,4 +183,83 @@ func TestStaticFallback(t *testing.T) {
 	if code := c.do("GET", "/../../etc/passwd", nil, nil); code != 200 {
 		t.Fatal("обход пути:", code)
 	}
+}
+
+func TestRoles(t *testing.T) {
+	root, st := newAPI(t)
+	var me meResponse
+	root.do("POST", "/api/auth/setup", credentials{"owner", "long-enough-pass"}, &me)
+	root.csrf = me.CSRF
+	if me.Role != "root" {
+		t.Fatal("первый администратор - не владелец:", me.Role)
+	}
+	var op, adm store.Admin
+	if code := root.do("POST", "/api/admins", adminInput{"oper", "operator-pass-1", "operator"}, &op); code != 201 {
+		t.Fatal("создать оператора:", code)
+	}
+	root.do("POST", "/api/admins", adminInput{"second", "admin-pass-123", "admin"}, &adm)
+	if code := root.do("POST", "/api/admins", adminInput{"x", "admin-pass-123", "root"}, nil); code != 422 {
+		t.Fatal("второго владельца создать нельзя:", code)
+	}
+	if code := root.do("POST", "/api/admins", adminInput{"oper", "operator-pass-1", "operator"}, nil); code != 422 {
+		t.Fatal("дубликат логина:", code)
+	}
+
+	login := func(l, p string) *client {
+		c, _ := newClientFor(t, root)
+		var m meResponse
+		if code := c.do("POST", "/api/auth/login", credentials{l, p}, &m); code != 200 {
+			t.Fatal("вход", l, code)
+		}
+		c.csrf = m.CSRF
+		return c
+	}
+	o := login("oper", "operator-pass-1")
+	var list []store.Admin
+	if code := o.do("GET", "/api/admins", nil, &list); code != 200 || len(list) != 3 {
+		t.Fatal("оператор видит список:", code, len(list))
+	}
+	if code := o.do("POST", "/api/admins", adminInput{"evil", "operator-pass-1", "admin"}, nil); code != 403 {
+		t.Fatal("оператор создал учётку:", code)
+	}
+	if code := o.do("DELETE", "/api/admins/"+adm.ID, nil, nil); code != 403 {
+		t.Fatal("оператор удалил учётку:", code)
+	}
+	if code := o.do("POST", "/api/servers", map[string]any{"name": "s", "host": "1.2.3.4", "password": "p"}, nil); code != 201 {
+		t.Fatal("оператор не может добавить сервер:", code)
+	}
+
+	a := login("second", "admin-pass-123")
+	rootID := ""
+	for _, x := range list {
+		if x.Role == "root" {
+			rootID = x.ID
+		}
+	}
+	if code := a.do("DELETE", "/api/admins/"+rootID, nil, nil); code != 403 {
+		t.Fatal("администратор удалил владельца:", code)
+	}
+	if code := a.do("PATCH", "/api/admins/"+op.ID, map[string]string{"role": "admin"}, nil); code != 200 {
+		t.Fatal("повысить оператора:", code)
+	}
+	if code := o.do("POST", "/api/admins", adminInput{"third", "operator-pass-1", "operator"}, nil); code != 201 {
+		t.Fatal("роль применяется сразу, без перевхода:", code)
+	}
+	if code := a.do("DELETE", "/api/admins/"+op.ID, nil, nil); code != 200 {
+		t.Fatal("удалить:", code)
+	}
+	if code := o.do("GET", "/api/auth/me", nil, nil); code != 401 {
+		t.Fatal("сессия удалённой учётки жива:", code)
+	}
+
+	if code := a.do("POST", "/api/auth/password", map[string]string{"current": "wrong", "new": "new-password-123"}, nil); code != 422 {
+		t.Fatal("смена пароля с неверным текущим:", code)
+	}
+	if code := a.do("POST", "/api/auth/password", map[string]string{"current": "admin-pass-123", "new": "new-password-123"}, nil); code != 200 {
+		t.Fatal("смена пароля:", code)
+	}
+	if code := a.do("GET", "/api/auth/me", nil, nil); code != 200 {
+		t.Fatal("текущая сессия после смены пароля должна жить:", code)
+	}
+	_ = st
 }
