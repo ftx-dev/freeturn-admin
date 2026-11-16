@@ -27,11 +27,18 @@ export function Layout() {
   useEffect(() => { applyTheme(theme); }, [theme]);
   useEffect(() => { refresh(); }, [refresh]);
   const refreshHealth = useHealth((s) => s.refresh);
+  const pending = useHealth((s) => list.some((x) => (s.byId[x.id]?.state ?? "unknown") === "unknown"));
   useEffect(() => {
     refreshHealth();
     const t = setInterval(refreshHealth, 15_000);
     return () => clearInterval(t);
   }, [refreshHealth, list.length]);
+  // Первая проверка идёт в фоне на сервере админки - её итог подтягиваем через пару секунд, а не через 15.
+  useEffect(() => {
+    if (!pending) return;
+    const t = setInterval(refreshHealth, 2500);
+    return () => clearInterval(t);
+  }, [pending, refreshHealth]);
 
   return (
     <div className="layout">

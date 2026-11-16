@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { api, type AuditEntry } from "../lib/api";
+import { useHealth } from "../lib/health";
 import { useServers } from "../lib/servers";
 import { ACTIONS, timeAgo } from "../lib/format";
 
@@ -8,7 +9,9 @@ export function DashboardPage() {
   const servers = useServers((s) => s.list);
   const [audit, setAudit] = useState<AuditEntry[]>([]);
   useEffect(() => { api<AuditEntry[]>("GET", "/api/audit?limit=8").then(setAudit).catch(() => {}); }, []);
-  const trusted = servers.filter((s) => s.hostFingerprint).length;
+  const health = useHealth((s) => s.byId);
+  const up = servers.filter((s) => health[s.id]?.state === "up").length;
+  const down = servers.filter((s) => health[s.id]?.state === "down").length;
 
   return (
     <div className="page">
@@ -21,8 +24,8 @@ export function DashboardPage() {
       </div>
       <div className="stats">
         <div className="stat"><div className="stat-value">{servers.length}</div><div className="stat-label">Серверов</div></div>
-        <div className="stat"><div className="stat-value">{trusted}</div><div className="stat-label">С проверенным ключом хоста</div></div>
-        <div className="stat"><div className="stat-value">{servers.length - trusted}</div><div className="stat-label">Ждут первого подключения</div></div>
+        <div className="stat"><div className="stat-value" style={{ color: up ? "var(--success)" : undefined }}>{up}</div><div className="stat-label">Доступны</div></div>
+        <div className="stat"><div className="stat-value" style={{ color: down ? "var(--error)" : undefined }}>{down}</div><div className="stat-label">Не отвечают</div></div>
       </div>
       <h2 className="section-title">Последние действия</h2>
       <div className="table-wrap">
