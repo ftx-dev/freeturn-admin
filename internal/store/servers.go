@@ -90,3 +90,14 @@ func (s *Store) DeleteServer(ctx context.Context, id string) error {
 	}
 	return nil
 }
+
+// Calls / SetCalls - зашифрованный JSON со ссылками на звонок сервера.
+func (s *Store) Calls(ctx context.Context, id string) (string, error) {
+	var enc string
+	err := s.queryRow(ctx, `SELECT calls_enc FROM servers WHERE id = ?`, id).Scan(&enc)
+	return enc, notFound(err)
+}
+
+func (s *Store) SetCalls(ctx context.Context, id, enc string) error {
+	return affected(s.exec(ctx, `UPDATE servers SET calls_enc = ? WHERE id = ?`, enc, id))
+}

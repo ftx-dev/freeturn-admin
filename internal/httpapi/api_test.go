@@ -284,3 +284,29 @@ func TestLinkWithCall(t *testing.T) {
 		t.Fatal("плохая ссылка на звонок:", code, e)
 	}
 }
+
+func TestCalls(t *testing.T) {
+	c, _ := newAPI(t)
+	var me meResponse
+	c.do("POST", "/api/auth/setup", credentials{"owner", "long-enough-pass"}, &me)
+	c.csrf = me.CSRF
+	var s map[string]any
+	c.do("POST", "/api/servers", map[string]any{"name": "s", "host": "1.2.3.4", "password": "p"}, &s)
+	id := s["id"].(string)
+	var got map[string][]Call
+	if code := c.do("GET", "/api/servers/"+id+"/calls", nil, &got); code != 200 || len(got["calls"]) != 0 {
+		t.Fatal("пусто:", code, got)
+	}
+	in := []Call{{"Основной", " https://vk.com/call/join/a "}, {"", "https://vk.com/call/join/b"}, {"дубль", "https://vk.com/call/join/a"}, {"", ""}}
+	if code := c.do("PUT", "/api/servers/"+id+"/calls", map[string]any{"calls": in}, &got); code != 200 || len(got["calls"]) != 2 || got["calls"][0].URL != "https://vk.com/call/join/a" {
+		t.Fatal("сохранить:", code, got)
+	}
+	c.do("GET", "/api/servers/"+id+"/calls", nil, &got)
+	if len(got["calls"]) != 2 || got["calls"][0].Label != "Основной" {
+		t.Fatal("прочитать:", got)
+	}
+	var e map[string]apiError
+	if code := c.do("PUT", "/api/servers/"+id+"/calls", map[string]any{"calls": []Call{{"", "http://x"}}}, &e); code != 422 || e["error"].Field != "calls.0" {
+		t.Fatal("http:", code, e)
+	}
+}

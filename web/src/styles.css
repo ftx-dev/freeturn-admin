@@ -312,3 +312,28 @@ code, .mono { font-family: var(--mono); font-size: 12px; }
 .health-unknown { background: var(--fg-muted); }
 .name-with-dot { display: inline-flex; align-items: center; gap: 6px; }
 .name-with-dot .health-dot { margin: 0; }
+
+/* ── Выпадающие списки: своя стрелка с отступом от края ── */
+.select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 34px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 12px;
+  cursor: pointer;
+}
+.select-inline { padding-right: 28px; background-position: right 8px center; }
+
+/* ── Звонки сервера ─────────────────────────────────────── */
+.call-row { display: grid; grid-template-columns: 1fr 2fr auto; gap: 8px; align-items: center; }
+.call-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  padding: 4px 10px; border-radius: 100px; border: 1px solid var(--border);
+  background: var(--bg-base); color: var(--fg-secondary); font-size: 12px; cursor: pointer;
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.chip:hover { color: var(--fg-primary); }
+.chip[aria-pressed="true"] { border-color: var(--fg-secondary); color: var(--fg-primary); background: var(--bg-active); }
+@media (max-width: 760px) { .call-row { grid-template-columns: 1fr auto; } .call-row .input:first-child { grid-column: 1 / -1; } }

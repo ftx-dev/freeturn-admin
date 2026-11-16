@@ -2,22 +2,19 @@ import QRCode from "qrcode";
 import { useEffect, useState } from "react";
 import { api, ApiError } from "../lib/api";
 import { Modal } from "./Modal";
+import type { Call } from "./ServerCalls";
 
-// Последняя ссылка на звонок - на сервер, только в этом браузере (удобство; админка её не хранит).
-const storageKey = (serverId: string) => `fta-call-link:${serverId}`;
-function loadCall(serverId: string): string {
-  try { return localStorage.getItem(storageKey(serverId)) ?? ""; } catch { return ""; }
-}
-function saveCall(serverId: string, v: string) {
-  try { v ? localStorage.setItem(storageKey(serverId), v) : localStorage.removeItem(storageKey(serverId)); } catch { /* приватный режим */ }
-}
 
 // Ссылка freeturn:// и QR - как экран «Поделиться» клиентов; по желанию с вложенной ссылкой на звонок.
 export function LinkModal({ title, link: baseLink, fileName, serverId, onClose }: {
   title: string; link: string; fileName: string; serverId: string; onClose: () => void;
 }) {
   const [withCall, setWithCall] = useState(false);
-  const [call, setCall] = useState(() => loadCall(serverId));
+  const [call, setCall] = useState("");
+  const [calls, setCalls] = useState<Call[]>([]);
+  useEffect(() => {
+    api<{ calls: Call[] }>("GET", `/api/servers/${serverId}/calls`).then((r) => setCalls(r.calls)).catch(() => {});
+  }, [serverId]);
   const [callError, setCallError] = useState("");
   const [link, setLink] = useState(baseLink);
   const [qr, setQr] = useState("");
@@ -36,14 +33,13 @@ export function LinkModal({ title, link: baseLink, fileName, serverId, onClose }
         const r = await api<{ link: string }>("POST", "/api/links/call", { link: baseLink, callLink: call.trim() });
         setLink(r.link);
         setCallError("");
-        saveCall(serverId, call.trim());
       } catch (e) {
         setLink(baseLink);
         setCallError(e instanceof ApiError ? e.message : String(e));
       }
     }, 300);
     return () => clearTimeout(t);
-  }, [withCall, call, baseLink, serverId]);
+  }, [withCall, call, baseLink]);
 
   useEffect(() => {
     QRCode.toDataURL(link, { errorCorrectionLevel: "M", margin: 2, width: 512 }).then(setQr).catch(() => setQr(""));
@@ -62,13 +58,26 @@ export function LinkModal({ title, link: baseLink, fileName, serverId, onClose }
       <div className="form">
         {qr ? <img className="qr" src={qr} alt="QR-код ссылки" /> : <div className="qr" />}
         <label className="check">
-          <input type="checkbox" checked={withCall} onChange={(e) => setWithCall(e.target.checked)} />
+          <input type="checkbox" checked={withCall} onChange={(e) => {
+            setWithCall(e.target.checked);
+            if (e.target.checked && !call && calls.length) setCall(calls[0].url); // первый звонок сервера - сразу
+          }} />
           <span>Вложить ссылку на звонок</span>
         </label>
         {withCall && (
           <label className="field">
-            <input className="input" value={call} onChange={(e) => setCall(e.target.value)} placeholder="https://vk.com/call/join/…"
-              spellCheck={false} autoFocus aria-invalid={callError ? true : undefined} />
+            {calls.length > 0 && (
+              <div className="call-chips">
+                {calls.map((c) => (
+                  <button key={c.url} type="button" className="chip" aria-pressed={call === c.url} onClick={() => setCall(c.url)} title={c.url}>
+                    {c.label || c.url.replace(/^https:\/\//, "")}
+                  </button>
+                ))}
+              </div>
+            )}
+            <input className="input" value={call} onChange={(e) => setCall(e.target.value)}
+              placeholder={calls.length ? "Или вставьте другую ссылку на звонок" : "https://vk.com/call/join/… — звонки сервера задаются в «Установка и настройки»"}
+              spellCheck={false} autoFocus={!calls.length} aria-invalid={callError ? true : undefined} />
             {callError ? <span className="field-error">{callError}</span>
               : <span className="hint">{embedded ? "Звонок вложен: получателю не нужна своя ссылка на звонок." : "Вставьте ссылку на звонок для режима «через релей»."}</span>}
           </label>
