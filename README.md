@@ -3,10 +3,9 @@
 # FreeTurnX Admin
 
 Веб-админка для серверов [free-turn-proxy](https://github.com/hackdiaz-dev/free-turn-proxy): подключение к VPS по SSH,
-установка и перенастройка сервера, выдача и отзыв доступа пользователям — то, что умеет Android-клиент, но в браузере
-и для нескольких серверов сразу.
+установка и перенастройка сервера, выдача и отзыв доступа пользователям.
 
-План — [plan.md](plan.md). Готово:
+Функции:
 
 - вход администратора, серверы с доступом по SSH (пароль или ключ, sudo; секреты в БД зашифрованы), журнал действий;
 - SSH с проверкой ключа хоста: первый запоминается, при смене операции блокируются до явного подтверждения;
@@ -62,6 +61,4 @@ docker compose -f docker-compose.sqlite.yml up -d --build
 Стек: React + Zustand + TanStack Router (фронт), Go + fasthttp (монолит), PostgreSQL или SQLite, Docker Compose.
 
 Клиенты: [macOS](https://github.com/ftx-dev/freeturn-macos) · [Windows](https://github.com/ftx-dev/freeturn-win).
-Новости — в [Telegram-канале](https://t.me/+ZVdbpZB0w_Q1MTdi).
-
-Лицензия — GPL-3.0.
+Новости - в [Telegram-канале](https://t.me/+ZVdbpZB0w_Q1MTdi).
