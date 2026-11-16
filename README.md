@@ -17,6 +17,16 @@
 Всё это через `install.sh` ядра (RPC proto 3), как в Android-клиенте. Дальше по плану: автонастройка новых серверов,
 профили протоколов клиентов, сроки и лимиты как в 3x-ui.
 
+## Скриншоты
+
+Тестовые данные.
+
+| Обзор | Сервер |
+|---|---|
+| ![Обзор](docs/screenshots/dashboard.png) | ![Сервер](docs/screenshots/server.png) |
+| **Пользователи** | **Установка и настройки** |
+| ![Пользователи](docs/screenshots/users.png) | ![Установка](docs/screenshots/install.png) |
+
 ## Запуск
 
 ```sh
@@ -47,7 +57,7 @@ docker compose -f docker-compose.sqlite.yml up -d --build
 
 Стек: React + Zustand + TanStack Router (фронт), Go + fasthttp (монолит), PostgreSQL или SQLite, Docker Compose.
 
-Клиенты: [macOS](https://github.com/huhhuh78787878-collab/freeturn-macos) · [Windows](https://github.com/huhhuh78787878-collab/freeturn-win).
+Клиенты: [macOS](https://github.com/ftx-dev/freeturn-macos) · [Windows](https://github.com/ftx-dev/freeturn-win).
 Новости — в [Telegram-канале](https://t.me/+ZVdbpZB0w_Q1MTdi).
 
 Лицензия — GPL-3.0.

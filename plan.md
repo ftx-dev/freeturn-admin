@@ -2,7 +2,7 @@
 
 Веб-админка для серверов FreeTurn: то, что Android-клиент [turn-proxy-android](https://github.com/hackdiaz-dev/turn-proxy-android)
 умеет делать с VPS по SSH, но в браузере и для нескольких серверов сразу. Клиенты для пользователей —
-[freeturn-macos](https://github.com/huhhuh78787878-collab/freeturn-macos) и [freeturn-win](https://github.com/huhhuh78787878-collab/freeturn-win).
+[freeturn-macos](https://github.com/ftx-dev/freeturn-macos) и [freeturn-win](https://github.com/ftx-dev/freeturn-win).
 Новости — в [Telegram-канале](https://t.me/+ZVdbpZB0w_Q1MTdi).
 
 ## 1. Цели
