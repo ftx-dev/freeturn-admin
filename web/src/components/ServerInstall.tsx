@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { api, ApiError, waitJob, type ApplySettings, type Job, type Probe, type Server } from "../lib/api";
 import { errorText, useHostKey } from "../lib/serverApi";
 import { LinkModal } from "./LinkModal";
+import { ServerCalls } from "./ServerCalls";
 
 function Segmented<T extends string>({ value, options, onChange }: { value: T; options: [T, string][]; onChange: (v: T) => void }) {
   return (
@@ -92,7 +93,9 @@ export function ServerInstall({ server }: { server: Server }) {
   if (!probe) return <div className="empty">Подключаюсь по SSH…</div>;
   const installed = probe.installed;
 
+  // Звонки - под основным блоком и только после его загрузки, чтобы страница не прыгала.
   return (
+    <>
     <form className="card card-body form" onSubmit={submit} noValidate>
       <div className="row">
         <Field label="Запуск">
@@ -172,5 +175,7 @@ export function ServerInstall({ server }: { server: Server }) {
       </div>
       {showOwner && <LinkModal title="Доступ владельца" link={owner} serverId={server.id} fileName={`${server.name}-owner`} onClose={() => setShowOwner(false)} />}
     </form>
+    <ServerCalls server={server} />
+    </>
   );
 }

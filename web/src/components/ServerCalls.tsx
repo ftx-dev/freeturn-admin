@@ -36,6 +36,7 @@ export function ServerCalls({ server }: { server: Server }) {
     }
   }
 
+  if (calls === null && !error) return null; // пока не загрузились - блока нет
   return (
     <div className="card">
       <div className="card-header row-between">

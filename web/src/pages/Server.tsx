@@ -1,7 +1,6 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { Modal } from "../components/Modal";
-import { ServerCalls } from "../components/ServerCalls";
 import { ServerForm } from "../components/ServerForm";
 import { ServerInstall } from "../components/ServerInstall";
 import { ServerLogs } from "../components/ServerLogs";
@@ -94,7 +93,7 @@ export function ServerPage() {
       </nav>
       {tab === "overview" && <ServerOverview key={server.id} server={server} onInstall={() => setTab("install")} />}
       {tab === "users" && <ServerUsers key={server.id} server={server} />}
-      {tab === "install" && <><ServerInstall key={server.id} server={server} /><ServerCalls key={`calls-${server.id}`} server={server} /></>}
+      {tab === "install" && <ServerInstall key={server.id} server={server} />}
       {tab === "logs" && <ServerLogs key={server.id} server={server} />}
 
       {editing && (
