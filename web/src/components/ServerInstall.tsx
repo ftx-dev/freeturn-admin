@@ -170,7 +170,7 @@ export function ServerInstall({ server }: { server: Server }) {
             : installed ? "Применить" : "Установить"}
         </button>
       </div>
-      {showOwner && <LinkModal title="Доступ владельца" link={owner} fileName={`${server.name}-owner`} onClose={() => setShowOwner(false)} />}
+      {showOwner && <LinkModal title="Доступ владельца" link={owner} serverId={server.id} fileName={`${server.name}-owner`} onClose={() => setShowOwner(false)} />}
     </form>
   );
 }

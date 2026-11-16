@@ -1,11 +1,50 @@
 import QRCode from "qrcode";
 import { useEffect, useState } from "react";
+import { api, ApiError } from "../lib/api";
 import { Modal } from "./Modal";
 
-// Ссылка freeturn:// и QR - как экран «Поделиться» клиентов.
-export function LinkModal({ title, link, fileName, onClose }: { title: string; link: string; fileName: string; onClose: () => void }) {
+// Последняя ссылка на звонок - на сервер, только в этом браузере (удобство; админка её не хранит).
+const storageKey = (serverId: string) => `fta-call-link:${serverId}`;
+function loadCall(serverId: string): string {
+  try { return localStorage.getItem(storageKey(serverId)) ?? ""; } catch { return ""; }
+}
+function saveCall(serverId: string, v: string) {
+  try { v ? localStorage.setItem(storageKey(serverId), v) : localStorage.removeItem(storageKey(serverId)); } catch { /* приватный режим */ }
+}
+
+// Ссылка freeturn:// и QR - как экран «Поделиться» клиентов; по желанию с вложенной ссылкой на звонок.
+export function LinkModal({ title, link: baseLink, fileName, serverId, onClose }: {
+  title: string; link: string; fileName: string; serverId: string; onClose: () => void;
+}) {
+  const [withCall, setWithCall] = useState(false);
+  const [call, setCall] = useState(() => loadCall(serverId));
+  const [callError, setCallError] = useState("");
+  const [link, setLink] = useState(baseLink);
   const [qr, setQr] = useState("");
   const [copied, setCopied] = useState(false);
+
+  // Пересобираем ссылку при включении/смене звонка (с небольшой паузой, пока человек вставляет ссылку).
+  useEffect(() => {
+    setCopied(false);
+    if (!withCall || !call.trim()) {
+      setLink(baseLink);
+      setCallError("");
+      return;
+    }
+    const t = setTimeout(async () => {
+      try {
+        const r = await api<{ link: string }>("POST", "/api/links/call", { link: baseLink, callLink: call.trim() });
+        setLink(r.link);
+        setCallError("");
+        saveCall(serverId, call.trim());
+      } catch (e) {
+        setLink(baseLink);
+        setCallError(e instanceof ApiError ? e.message : String(e));
+      }
+    }, 300);
+    return () => clearTimeout(t);
+  }, [withCall, call, baseLink, serverId]);
+
   useEffect(() => {
     QRCode.toDataURL(link, { errorCorrectionLevel: "M", margin: 2, width: 512 }).then(setQr).catch(() => setQr(""));
   }, [link]);
@@ -17,10 +56,23 @@ export function LinkModal({ title, link, fileName, onClose }: { title: string; l
     } catch { /* без https буфер обмена недоступен - ссылку можно выделить вручную */ }
   }
 
+  const embedded = withCall && !!call.trim() && !callError && link !== baseLink;
   return (
     <Modal title={title} onClose={onClose}>
       <div className="form">
         {qr ? <img className="qr" src={qr} alt="QR-код ссылки" /> : <div className="qr" />}
+        <label className="check">
+          <input type="checkbox" checked={withCall} onChange={(e) => setWithCall(e.target.checked)} />
+          <span>Вложить ссылку на звонок</span>
+        </label>
+        {withCall && (
+          <label className="field">
+            <input className="input" value={call} onChange={(e) => setCall(e.target.value)} placeholder="https://vk.com/call/join/…"
+              spellCheck={false} autoFocus aria-invalid={callError ? true : undefined} />
+            {callError ? <span className="field-error">{callError}</span>
+              : <span className="hint">{embedded ? "Звонок вложен: получателю не нужна своя ссылка на звонок." : "Вставьте ссылку на звонок для режима «через релей»."}</span>}
+          </label>
+        )}
         <textarea className="textarea link-box" readOnly value={link} onFocus={(e) => e.currentTarget.select()} />
         <span className="hint">Ссылка равносильна ключам: передавайте её только тому, кому выдаёте доступ.</span>
         <div className="actions">

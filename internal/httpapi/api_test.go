@@ -263,3 +263,24 @@ func TestRoles(t *testing.T) {
 	}
 	_ = st
 }
+
+func TestLinkWithCall(t *testing.T) {
+	c, _ := newAPI(t)
+	var me meResponse
+	c.do("POST", "/api/auth/setup", credentials{"owner", "long-enough-pass"}, &me)
+	c.csrf = me.CSRF
+	base := "freeturn://eyJ2IjoxLCJwcm92aWRlciI6InZrIiwicGVlciI6IjEuMi4zLjQ6NTYwMDAiLCJuYW1lIjoiYm9iIn0"
+	var out map[string]string
+	if code := c.do("POST", "/api/links/call", map[string]string{"link": base, "callLink": "https://vk.com/call/join/x"}, &out); code != 200 || out["link"] == base {
+		t.Fatal("вложить:", code, out)
+	}
+	var back map[string]string
+	c.do("POST", "/api/links/call", map[string]string{"link": out["link"], "callLink": ""}, &back)
+	if back["link"] != base {
+		t.Fatal("убрать звонок - вернуть исходную ссылку:", back["link"])
+	}
+	var e map[string]apiError
+	if code := c.do("POST", "/api/links/call", map[string]string{"link": base, "callLink": "http://x"}, &e); code != 422 || e["error"].Field != "callLink" {
+		t.Fatal("плохая ссылка на звонок:", code, e)
+	}
+}

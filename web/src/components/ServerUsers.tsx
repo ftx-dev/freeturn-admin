@@ -117,7 +117,7 @@ export function ServerUsers({ server }: { server: Server }) {
           </table>
         )}
       </div>
-      {shown && <LinkModal title={`Доступ «${shown.name}»`} link={shown.link} fileName={`${server.name}-${shown.name}`} onClose={() => setShown(null)} />}
+      {shown && <LinkModal title={`Доступ «${shown.name}»`} link={shown.link} serverId={server.id} fileName={`${server.name}-${shown.name}`} onClose={() => setShown(null)} />}
       {revoke && (
         <Modal title={`Отозвать доступ «${revoke}»?`} onClose={() => setRevoke("")}>
           <div className="form">

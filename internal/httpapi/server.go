@@ -73,6 +73,7 @@ func (a *API) Handler() fasthttp.RequestHandler {
 	r.POST("/api/servers/{id}/restart", a.authed(a.simple("restart", "server.restart")))
 	r.POST("/api/servers/{id}/uninstall", a.authed(a.uninstall))
 	r.GET("/api/jobs/{id}", a.authed(a.getJob))
+	r.POST("/api/links/call", a.authed(a.linkWithCall))
 	r.GET("/api/defaults", a.authed(func(rc *fasthttp.RequestCtx) {
 		writeJSON(rc, 200, map[string]any{"listenPort": RandomListenPort(), "obfKey": NewObfKey()})
 	}))
