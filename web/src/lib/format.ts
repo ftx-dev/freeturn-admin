@@ -17,4 +17,12 @@ export const ACTIONS: Record<string, string> = {
   "server.create": "Добавлен сервер",
   "server.update": "Изменён сервер",
   "server.delete": "Удалён сервер",
+  "server.ssh_test": "Проверка SSH",
+  "server.trust": "Подтверждён ключ хоста",
+  "server.apply": "Установка или настройка",
+  "server.stop": "Остановка FreeTurn",
+  "server.restart": "Перезапуск FreeTurn",
+  "server.uninstall": "Удаление FreeTurn",
+  "user.add": "Выдан доступ",
+  "user.remove": "Отозван доступ",
 };

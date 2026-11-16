@@ -15,6 +15,7 @@ import (
 	"github.com/fasthttp/router"
 	"github.com/valyala/fasthttp"
 
+	"github.com/huhhuh78787878-collab/freeturn-admin/internal/rpc"
 	"github.com/huhhuh78787878-collab/freeturn-admin/internal/secret"
 	"github.com/huhhuh78787878-collab/freeturn-admin/internal/store"
 )
@@ -26,8 +27,10 @@ type API struct {
 	SecureCookies bool
 	TrustProxy    bool
 	Log           *slog.Logger
+	Script        *rpc.Script // install.sh ядра
 
 	loginLimit *limiter
+	jobs       jobs
 }
 
 const (
@@ -39,6 +42,7 @@ const (
 
 func (a *API) Handler() fasthttp.RequestHandler {
 	a.loginLimit = newLimiter(10, 15*time.Minute)
+	a.jobs = jobs{byID: map[string]*Job{}, busy: map[string]string{}}
 	r := router.New()
 	r.GET("/api/health", func(ctx *fasthttp.RequestCtx) { writeJSON(ctx, 200, map[string]string{"status": "ok"}) })
 
@@ -53,6 +57,23 @@ func (a *API) Handler() fasthttp.RequestHandler {
 	r.GET("/api/servers/{id}", a.authed(a.getServer))
 	r.PATCH("/api/servers/{id}", a.authed(a.updateServer))
 	r.DELETE("/api/servers/{id}", a.authed(a.deleteServer))
+
+	r.POST("/api/servers/{id}/ssh/test", a.authed(a.sshTest))
+	r.POST("/api/servers/{id}/ssh/trust", a.authed(a.sshTrust))
+	r.GET("/api/servers/{id}/status", a.authed(a.status))
+	r.GET("/api/servers/{id}/logs", a.authed(a.serverLogs))
+	r.GET("/api/servers/{id}/users", a.authed(a.listUsers))
+	r.POST("/api/servers/{id}/users", a.authed(a.addUser))
+	r.GET("/api/servers/{id}/users/{name}", a.authed(a.getUser))
+	r.DELETE("/api/servers/{id}/users/{name}", a.authed(a.removeUser))
+	r.POST("/api/servers/{id}/apply", a.authed(a.applyServer))
+	r.POST("/api/servers/{id}/stop", a.authed(a.simple("stop", "server.stop")))
+	r.POST("/api/servers/{id}/restart", a.authed(a.simple("restart", "server.restart")))
+	r.POST("/api/servers/{id}/uninstall", a.authed(a.uninstall))
+	r.GET("/api/jobs/{id}", a.authed(a.getJob))
+	r.GET("/api/defaults", a.authed(func(rc *fasthttp.RequestCtx) {
+		writeJSON(rc, 200, map[string]any{"listenPort": RandomListenPort(), "obfKey": NewObfKey()})
+	}))
 
 	r.GET("/api/audit", a.authed(a.listAudit))
 

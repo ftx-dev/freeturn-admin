@@ -2,19 +2,56 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { Modal } from "../components/Modal";
 import { ServerForm } from "../components/ServerForm";
+import { ServerInstall } from "../components/ServerInstall";
+import { ServerLogs } from "../components/ServerLogs";
+import { ServerOverview } from "../components/ServerOverview";
+import { ServerUsers } from "../components/ServerUsers";
+import { api, type Server } from "../lib/api";
 import { useServers } from "../lib/servers";
-import { formatDate } from "../lib/format";
-import { serverRoute } from "../router";
-import { HostKeyBadge } from "./Servers";
+import { errorText, useHostKey } from "../lib/serverApi";
+import { serverRoute, type ServerTab } from "../router";
+
+const TABS: [ServerTab, string][] = [["overview", "Обзор"], ["users", "Пользователи"], ["install", "Установка и настройки"], ["logs", "Журнал"]];
+
+function HostKeyBanner({ server }: { server: Server }) {
+  const changed = useHostKey((s) => s.changed[server.id]);
+  const clear = useHostKey((s) => s.clear);
+  const refresh = useServers((s) => s.refresh);
+  const [error, setError] = useState("");
+  if (!changed) return null;
+  async function trust() {
+    try {
+      await api("POST", `/api/servers/${server.id}/ssh/trust`, { fingerprint: changed.got });
+      clear(server.id);
+      refresh();
+    } catch (e) {
+      setError(errorText(e));
+    }
+  }
+  return (
+    <div className="alert alert-warn">
+      <strong>Ключ хоста сервера изменился.</strong> Так бывает после переустановки системы на VPS. Если вы её не делали —
+      возможно, кто-то подменил сервер: не подтверждайте.
+      <dl className="kv" style={{ margin: "10px 0" }}>
+        <dt>Был</dt><dd className="mono">{changed.want}</dd>
+        <dt>Сейчас</dt><dd className="mono">{changed.got}</dd>
+      </dl>
+      {error && <div className="field-error">{error}</div>}
+      <button className="btn" onClick={trust}>Сервер переустанавливали — доверять новому ключу</button>
+    </div>
+  );
+}
 
 export function ServerPage() {
   const { id } = serverRoute.useParams();
+  const { tab = "overview" } = serverRoute.useSearch();
   const { list, loaded, update, remove } = useServers();
   const navigate = useNavigate();
   const [editing, setEditing] = useState(false);
   const [confirm, setConfirm] = useState(false);
   const [error, setError] = useState("");
   const server = list.find((s) => s.id === id);
+  const setTab = (t: ServerTab) => navigate({ to: "/servers/$id", params: { id }, search: t === "overview" ? {} : { tab: t }, replace: true });
 
   if (!server) {
     return (
@@ -29,7 +66,7 @@ export function ServerPage() {
       await remove(id);
       navigate({ to: "/servers" });
     } catch (e) {
-      setError((e as Error).message);
+      setError(errorText(e));
       setConfirm(false);
     }
   }
@@ -43,37 +80,35 @@ export function ServerPage() {
           <p className="page-subtitle mono">{server.sshUser}@{server.host}:{server.sshPort}</p>
         </div>
         <div className="actions">
-          <button className="btn" onClick={() => setEditing(true)}>Изменить</button>
-          <button className="btn btn-danger" onClick={() => setConfirm(true)}>Удалить</button>
+          <button className="btn" onClick={() => setEditing(true)}>Доступ по SSH</button>
+          <button className="btn btn-danger" onClick={() => setConfirm(true)}>Убрать из админки</button>
         </div>
       </div>
+      <HostKeyBanner server={server} />
       {error && <div className="alert alert-err">{error}</div>}
-      <div className="card">
-        <div className="card-header">Подключение</div>
-        <div className="card-body">
-          <dl className="kv">
-            <dt>Состояние</dt><dd><HostKeyBadge fingerprint={server.hostFingerprint} /></dd>
-            <dt>Вход</dt><dd>{server.authType === "key" ? "Ключ SSH" : "Пароль"}{server.hasKeyPassphrase && " (с паролем ключа)"}</dd>
-            <dt>Ключ хоста</dt><dd className={server.hostFingerprint ? "mono" : "cell-sub"}>{server.hostFingerprint || "Запомнится при первом подключении"}</dd>
-            {server.sshUser !== "root" && <><dt>sudo</dt><dd>{server.hasSudoPassword ? "С паролем" : "Без пароля"}</dd></>}
-            <dt>Добавлен</dt><dd>{formatDate(server.createdAt)}</dd>
-            <dt>Изменён</dt><dd>{formatDate(server.updatedAt)}</dd>
-          </dl>
-        </div>
-      </div>
+      <nav className="tabs" role="tablist">
+        {TABS.map(([t, label]) => (
+          <button key={t} role="tab" aria-selected={tab === t} className="tab" onClick={() => setTab(t)}>{label}</button>
+        ))}
+      </nav>
+      {tab === "overview" && <ServerOverview key={server.id} server={server} onInstall={() => setTab("install")} />}
+      {tab === "users" && <ServerUsers key={server.id} server={server} />}
+      {tab === "install" && <ServerInstall key={server.id} server={server} />}
+      {tab === "logs" && <ServerLogs key={server.id} server={server} />}
+
       {editing && (
-        <Modal title="Изменить сервер" onClose={() => setEditing(false)}>
+        <Modal title="Доступ по SSH" onClose={() => setEditing(false)}>
           <ServerForm server={server} submitLabel="Сохранить" onCancel={() => setEditing(false)}
             onSubmit={async (input) => { await update(id, input); setEditing(false); }} />
         </Modal>
       )}
       {confirm && (
-        <Modal title="Удалить сервер?" onClose={() => setConfirm(false)}>
+        <Modal title="Убрать сервер из админки?" onClose={() => setConfirm(false)}>
           <div className="form">
-            <p style={{ margin: 0 }}>«{server.name}» и его доступы удалятся из админки. FreeTurn на самом VPS останется работать.</p>
+            <p style={{ margin: 0 }}>«{server.name}» исчезнет из админки вместе с доступом по SSH. FreeTurn на самом VPS продолжит работать.</p>
             <div className="actions">
               <button className="btn" onClick={() => setConfirm(false)}>Отмена</button>
-              <button className="btn btn-primary" style={{ background: "var(--error)", color: "#fff" }} onClick={doRemove}>Удалить</button>
+              <button className="btn btn-primary btn-destructive" onClick={doRemove}>Убрать</button>
             </div>
           </div>
         </Modal>

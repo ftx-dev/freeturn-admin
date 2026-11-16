@@ -29,7 +29,15 @@ export const serversRoute = createRoute({
   component: ServersPage,
   validateSearch: (s: Record<string, unknown>): { add?: boolean } => (s.add === true || s.add === "true" ? { add: true } : {}),
 });
-export const serverRoute = createRoute({ getParentRoute: () => appRoute, path: "/servers/$id", component: ServerPage });
+export type ServerTab = "overview" | "users" | "install" | "logs";
+const serverTabs: ServerTab[] = ["overview", "users", "install", "logs"];
+export const serverRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: "/servers/$id",
+  component: ServerPage,
+  validateSearch: (s: Record<string, unknown>): { tab?: ServerTab } =>
+    serverTabs.includes(s.tab as ServerTab) ? { tab: s.tab as ServerTab } : {},
+});
 const auditRoute = createRoute({ getParentRoute: () => appRoute, path: "/audit", component: AuditPage });
 
 export const router = createRouter({

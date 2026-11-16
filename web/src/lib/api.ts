@@ -1,6 +1,6 @@
 // Обёртка над fetch: JSON, CSRF-токен для изменяющих запросов, ошибки API как ApiError.
 export class ApiError extends Error {
-  constructor(public status: number, public code: string, message: string, public field?: string) {
+  constructor(public status: number, public code: string, message: string, public field?: string, public data?: any) {
     super(message);
   }
 }
@@ -25,7 +25,7 @@ export async function api<T>(method: string, path: string, body?: unknown): Prom
   if (!res.ok) {
     const e = data?.error ?? {};
     if (res.status === 401 && !path.startsWith("/api/auth/login")) onUnauthorized();
-    throw new ApiError(res.status, e.code ?? "http", e.message ?? `Ошибка ${res.status}`, e.field);
+    throw new ApiError(res.status, e.code ?? "http", e.message ?? `Ошибка ${res.status}`, e.field, data);
   }
   return data as T;
 }
@@ -68,4 +68,47 @@ export interface AuditEntry {
   details: string;
   result: string;
   at: number;
+}
+
+export interface CoreConfig {
+  method: string; backend: string; connect: string; host: string;
+  listen_port: number; wg_port: number; wg_net: string; mode: string;
+  obf_profile: string; obf_key: string; version: string;
+}
+
+export interface Probe {
+  installed: boolean; running: boolean; euid: number; arch: string;
+  method?: string; version?: string; config?: CoreConfig;
+}
+
+export interface ServerUser { name: string; client_id: string; self: boolean; ip?: string; pub?: string; hs?: number }
+
+export interface UserList {
+  clients: ServerUser[];
+  share: { backend: string; host: string; port: number; mode: string; obf_profile: string; obf_key: string };
+}
+
+export interface ClientConf { client: ServerUser; conf_b64: string; link: string }
+
+export interface ApplySettings {
+  method?: string; backend?: string; connect?: string; mode?: string;
+  listenPort?: number; wgPort?: number; wgNet?: string;
+  obfProfile?: string; obfKey?: string; host?: string; update?: boolean;
+}
+
+export interface Job {
+  id: string; serverId: string; kind: string; status: "running" | "ok" | "error";
+  error?: string; errorCode?: string; stage?: string; logs?: string[];
+  result?: { owner?: { client_id: string; link: string; conf_b64: string } } & Record<string, unknown>;
+  startedAt: string; finishedAt?: string;
+}
+
+/** Ждёт окончания фоновой задачи (опрос раз в секунду). */
+export async function waitJob(id: string, onUpdate?: (j: Job) => void): Promise<Job> {
+  for (;;) {
+    const j = await api<Job>("GET", `/api/jobs/${id}`);
+    onUpdate?.(j);
+    if (j.status !== "running") return j;
+    await new Promise((r) => setTimeout(r, 1000));
+  }
 }

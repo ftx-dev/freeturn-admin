@@ -17,6 +17,7 @@ import (
 	"github.com/huhhuh78787878-collab/freeturn-admin/internal/auth"
 	"github.com/huhhuh78787878-collab/freeturn-admin/internal/config"
 	"github.com/huhhuh78787878-collab/freeturn-admin/internal/httpapi"
+	"github.com/huhhuh78787878-collab/freeturn-admin/internal/rpc"
 	"github.com/huhhuh78787878-collab/freeturn-admin/internal/secret"
 	"github.com/huhhuh78787878-collab/freeturn-admin/internal/store"
 	"github.com/huhhuh78787878-collab/freeturn-admin/web"
@@ -58,7 +59,8 @@ func run(log *slog.Logger) error {
 	if err != nil {
 		return err
 	}
-	api := &httpapi.API{Store: st, Box: box, Web: web.Dist(), SecureCookies: cfg.SecureCookies, TrustProxy: cfg.TrustProxy, Log: log}
+	api := &httpapi.API{Store: st, Box: box, Web: web.Dist(), SecureCookies: cfg.SecureCookies, TrustProxy: cfg.TrustProxy, Log: log,
+		Script: &rpc.Script{URL: rpc.ScriptURL(cfg.CoreVersion), File: os.Getenv("FTA_INSTALL_SCRIPT")}}
 	srv := &fasthttp.Server{
 		Handler:            api.Handler(),
 		Name:               "freeturn-admin",

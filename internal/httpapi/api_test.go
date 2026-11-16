@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"net/http/cookiejar"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -16,6 +17,7 @@ import (
 	"github.com/valyala/fasthttp"
 	"github.com/valyala/fasthttp/fasthttputil"
 
+	"github.com/huhhuh78787878-collab/freeturn-admin/internal/rpc"
 	"github.com/huhhuh78787878-collab/freeturn-admin/internal/secret"
 	"github.com/huhhuh78787878-collab/freeturn-admin/internal/store"
 )
@@ -33,7 +35,9 @@ func newAPI(t *testing.T) (*client, *store.Store) {
 		t.Fatal(err)
 	}
 	box, _ := secret.New(make([]byte, 32))
-	api := &API{Store: st, Box: box, Log: slog.New(slog.NewTextHandler(io.Discard, nil)),
+	script := filepath.Join(t.TempDir(), "install.sh")
+	os.WriteFile(script, []byte(fakeInstall), 0o755)
+	api := &API{Store: st, Box: box, Log: slog.New(slog.NewTextHandler(io.Discard, nil)), Script: &rpc.Script{File: script},
 		Web: fstest.MapFS{"index.html": {Data: []byte("<html>app</html>")}, "assets/a.js": {Data: []byte("js")}}}
 	ln := fasthttputil.NewInmemoryListener()
 	go fasthttp.Serve(ln, api.Handler())
