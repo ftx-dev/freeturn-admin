@@ -1,5 +1,9 @@
 version: 2
 project_name: freeturn-admin
+before:
+  hooks:
+    # Фронт встраивается в бинарник (web/embed.go) - собираем до go build.
+    - sh -c "cd web && npm ci && npm run build"
 builds:
   - main: ./cmd/freeturn-admin
     env: [CGO_ENABLED=0]
@@ -15,3 +19,7 @@ archives:
     files: [LICENSE, README.md]
 checksum:
   name_template: SHA256SUMS.txt
+release:
+  # Установщик - тем же релизом: .../releases/latest/download/install.sh
+  extra_files:
+    - glob: scripts/install.sh

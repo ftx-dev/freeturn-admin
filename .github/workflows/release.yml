@@ -1,0 +1,30 @@
+# Тег vX.Y.Z -> бинарники для linux/macOS/windows (amd64, arm64), SHA256SUMS.txt и install.sh в GitHub Release.
+# Серверы, поставленные через install.sh, подтягивают новый релиз сами (таймер freeturn-admin-update).
+name: Release
+
+on:
+  push:
+    tags: ['v*.*.*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - uses: goreleaser/goreleaser-action@v6
+        with:
+          version: '~> v2'
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
