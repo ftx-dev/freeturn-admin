@@ -34,7 +34,19 @@
 | **Установка, настройки и звонки** | **Учётки админки** |
 | ![Установка](docs/screenshots/install.png) | ![Учётки](docs/screenshots/admins.png) |
 
-## Запуск
+## Установка одной командой
+
+На Linux-сервер с systemd (amd64 или arm64), без Docker:
+
+```sh
+wget -qO- https://github.com/ftx-dev/freeturn-admin/releases/latest/download/install.sh | sudo bash
+```
+
+Установщик скачивает последний релиз, сверяет контрольную сумму, ставит службу `freeturn-admin` и печатает адрес, логин и пароль первого администратора. Данные - в `/var/lib/freeturn-admin`, настройки - в `/etc/freeturn-admin/env`. Раз в сутки админка сама обновляется до последнего релиза.
+
+Параметры - после `sudo bash -s --`: `--port 9000`, `--listen 127.0.0.1:8080 --behind-proxy` (за своим HTTPS-прокси), `--version v0.1.0`, `--no-auto-update`, `--uninstall` (данные остаются).
+
+## Запуск в Docker
 
 ```sh
 cp .env.example .env            # задайте POSTGRES_PASSWORD
